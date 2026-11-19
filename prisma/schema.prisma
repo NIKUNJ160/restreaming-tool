@@ -1,0 +1,96 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               String            @id @default(uuid())
+  email            String?           @unique
+  username         String?           @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  kickAccounts     KickAccount[]
+  streamSessions   StreamSession[]
+  scheduledStreams ScheduledStream[]
+}
+
+model KickAccount {
+  id             String          @id @default(uuid())
+  userId         String?
+  user           User?           @relation(fields: [userId], references: [id])
+  kickUsername   String
+  channelSlug    String
+  channelId      String?
+  streamKeyEnc   String          // AES-256-GCM encrypted
+  streamKeyIv    String
+  streamKeyTag   String
+  rtmpUrl        String          @default("rtmps://fa723fc1b171.global-contribute.live-video.net/app/")
+  isVerified     Boolean         @default(false)
+  avatarUrl      String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  streamSessions StreamSession[]
+}
+
+model StreamSession {
+  id              String       @id @default(uuid())
+  userId          String?
+  user            User?        @relation(fields: [userId], references: [id])
+  kickAccountId   String?
+  kickAccount     KickAccount? @relation(fields: [kickAccountId], references: [id])
+  title           String       @default("Restream Broadcast")
+  sourceUrl       String
+  sourceFormat    String?      // HLS | RTMP | DASH | YOUTUBE | DIRECT
+  destinationUrl  String       // Masked destination URL
+  status          String       @default("IDLE") // IDLE | STARTING | LIVE | STOPPING | ERROR | COMPLETED
+  qualityPreset   String       @default("source") // source | 1080p60 | 720p60 | 480p
+  isTranscoding   Boolean      @default(false)
+  videoBitrate    Int?
+  audioBitrate    Int?
+  resolution      String?
+  fps             Float?
+  startTime       DateTime?
+  endTime         DateTime?
+  durationSeconds Int          @default(0)
+  totalBytesSent  BigInt       @default(0)
+  errorMessage    String?
+  exitCode        Int?
+  recordEnabled   Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  recordings      Recording[]
+}
+
+model ScheduledStream {
+  id                 String    @id @default(uuid())
+  userId             String?
+  user               User?     @relation(fields: [userId], references: [id])
+  title              String
+  sourceUrl          String
+  qualityPreset      String    @default("source")
+  scheduledStartTime DateTime
+  scheduledStopTime  DateTime?
+  autoStart          Boolean   @default(true)
+  retryOnFail        Boolean   @default(true)
+  maxRetries         Int       @default(3)
+  status             String    @default("PENDING") // PENDING | ACTIVE | COMPLETED | FAILED | CANCELLED
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Recording {
+  id              String        @id @default(uuid())
+  streamSessionId String
+  streamSession   StreamSession @relation(fields: [streamSessionId], references: [id])
+  fileName        String
+  filePath        String
+  fileSizeBytes   BigInt        @default(0)
+  durationSeconds Int           @default(0)
+  downloadUrl     String?
+  status          String        @default("RECORDING") // RECORDING | COMPLETED | FAILED
+  createdAt       DateTime      @default(now())
+}

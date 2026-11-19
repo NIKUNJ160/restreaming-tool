@@ -1,0 +1,18 @@
+node_modules/
+.env
+*.log
+.DS_Store
+
+# Media directories (ignore video binaries, retain directory structure)
+downloads/*
+!downloads/.gitkeep
+clips/*
+!clips/.gitkeep
+uploads/*
+!uploads/.gitkeep
+recordings/*
+!recordings/.gitkeep
+
+# Local database store (ignore active state, retain directory structure)
+data/*
+!data/.gitkeep

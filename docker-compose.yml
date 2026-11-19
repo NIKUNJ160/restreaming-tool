@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: kick-restream-platform
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://restream:securepass@postgres:5432/restream_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KICK_RTMP_URL=rtmps://fa723fc1b171.global-contribute.live-video.net/app/
+      - ENCRYPTION_KEY=kick_restream_master_secret_key_32_bytes!
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - recordings_data:/app/recordings
+      - app_data:/app/data
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: restream-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: restream
+      POSTGRES_PASSWORD: securepass
+      POSTGRES_DB: restream_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: restream-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  pg_data:
+  redis_data:
+  recordings_data:
+  app_data:

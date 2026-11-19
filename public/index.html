@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kick Broadcast Studio — Direct URL Restreamer</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- HLS.js for Source Preview -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+</head>
+<body class="broadcast-theme">
+  <div class="app-layout">
+    <!-- BROADCAST SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">
+          <span class="kick-dot"></span>
+          <span class="brand-title">KICK<span class="text-green">CAST</span></span>
+        </div>
+        <span class="version-tag">STUDIO v2.0</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="control-room">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Live Control Room</span>
+          <span id="sidebarLivePill" class="live-indicator-dot" style="display: none;"></span>
+        </button>
+
+        <button class="nav-item" data-tab="overview">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+          <span>Overview &amp; KPIs</span>
+        </button>
+
+        <button class="nav-item" data-tab="history">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Broadcast History</span>
+        </button>
+
+        <button class="nav-item" data-tab="scheduler">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Schedule Manager</span>
+        </button>
+
+        <button class="nav-item" data-tab="downloads">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Video Downloader</span>
+        </button>
+
+        <button class="nav-item" data-tab="clipper">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+          <span>Shorts &amp; Clipper</span>
+        </button>
+
+        <button class="nav-item" data-tab="settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Kick Settings</span>
+        </button>
+      </nav>
+
+      <!-- Kick Account Badge at bottom of sidebar -->
+      <div class="sidebar-account-widget">
+        <div class="account-pill" id="sidebarAccountBadge">
+          <div class="account-avatar-placeholder">K</div>
+          <div class="account-details">
+            <span class="account-name" id="sidebarAccountName">No Kick Account</span>
+            <span class="account-status" id="sidebarAccountStatus">Connect Key</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN STUDIO CANVAS -->
+    <main class="main-canvas">
+      <!-- TOP STATUS BAR -->
+      <header class="top-bar">
+        <div class="top-left">
+          <div class="channel-broadcast-tag">
+            <span class="dest-label">DESTINATION:</span>
+            <span class="dest-badge">KICK.COM ONLY</span>
+          </div>
+          <span class="divider">/</span>
+          <span id="activeChannelDisplay" class="active-channel-text">Not Connected</span>
+        </div>
+
+        <div class="top-right">
+          <div class="master-status-box">
+            <span class="status-label">MASTER:</span>
+            <span id="masterStatusBadge" class="badge-status badge-offline">OFFLINE</span>
+            <span id="masterUptime" class="uptime-counter">00:00:00</span>
+          </div>
+          <button id="quickStopBtn" class="btn btn-danger-sm" disabled>EMERGENCY STOP</button>
+        </div>
+      </header>
+
+      <div class="content-scroll">
+        <!-- ================= VIEW 1: LIVE CONTROL ROOM ================= -->
+        <section id="tab-control-room" class="tab-pane active">
+          <!-- TOP TELEMETRY HUD -->
+          <div class="telemetry-grid">
+            <div class="telemetry-card">
+              <span class="tel-label">OUTPUT BITRATE</span>
+              <div class="tel-value"><span id="telBitrate">0</span> <small>kbps</small></div>
+              <div class="tel-bar-container"><div id="telBitrateBar" class="tel-bar"></div></div>
+            </div>
+
+            <div class="telemetry-card">
+              <span class="tel-label">FRAMERATE</span>
+              <div class="tel-value"><span id="telFps">0.0</span> <small>FPS</small></div>
+              <div class="tel-sub" id="telResolution">Target: Source</div>
+            </div>
+
+            <div class="telemetry-card">
+              <span class="tel-label">NETWORK HEALTH</span>
+              <div class="tel-value">
+                <span id="telHealthDot" class="health-dot health-gray"></span>
+                <span id="telHealthText">IDLE</span>
+              </div>
+              <div class="tel-sub" id="telSpeed">Speed: 0.0x</div>
+            </div>
+
+            <div class="telemetry-card">
+              <span class="tel-label">TOTAL FRAMES</span>
+              <div class="tel-value" id="telFrames">0</div>
+              <div class="tel-sub">Engine: FFmpeg Copy/x264</div>
+            </div>
+          </div>
+
+          <!-- SPLIT WORKBENCH: PREVIEW + CONTROLS -->
+          <div class="workbench-grid">
+            <!-- LEFT: SOURCE PREVIEW MONITOR -->
+            <div class="panel monitor-panel">
+              <div class="panel-header">
+                <h2>SOURCE MONITOR</h2>
+                <div class="monitor-tags">
+                  <span id="sourceTypeBadge" class="tag-badge">UNKNOWN</span>
+                  <span id="monitorStatus" class="tag-badge">NO SIGNAL</span>
+                </div>
+              </div>
+              <div class="monitor-viewport">
+                <video id="sourceVideoPlayer" controls muted playsinline class="video-element"></video>
+                <div id="noSignalOverlay" class="no-signal-overlay">
+                  <div class="signal-bars"></div>
+                  <p class="signal-text">AWAITING SOURCE FEED</p>
+                  <small>Enter an HLS/m3u8, RTMP, or stream URL to validate and preview</small>
+                </div>
+              </div>
+              <div class="monitor-footer">
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" id="previewSourceBtn" class="btn btn-secondary-sm">Preview Source Feed</button>
+                  <button type="button" id="quickDlBtn" class="btn btn-secondary-sm" title="Capture and download this stream URL">Download Feed</button>
+                </div>
+                <span id="probeResultText" class="probe-result-label"></span>
+              </div>
+            </div>
+
+            <!-- RIGHT: BROADCAST CONFIGURATION & CONTROLS -->
+            <div class="panel control-panel">
+              <div class="panel-header">
+                <h2>RESTREAM CONFIGURATION</h2>
+                <span class="panel-subtitle">Zero-desktop setup for Kick</span>
+              </div>
+
+              <form id="broadcastForm" class="broadcast-form">
+                <!-- SOURCE MODE SELECTOR -->
+                <div class="form-group margin-bottom-12">
+                  <label>Broadcast Source</label>
+                  <div style="display: flex; gap: 8px;">
+                    <button type="button" id="sourceModeUrlBtn" class="btn btn-secondary-sm active-toggle" style="flex: 1;">🌐 Livestream URL</button>
+                    <button type="button" id="sourceModeFileBtn" class="btn btn-secondary-sm" style="flex: 1;">📁 Downloaded Video</button>
+                  </div>
+                </div>
+
+                <!-- SOURCE URL SECTION -->
+                <div id="sourceUrlSection" class="form-group">
+                  <div class="field-header">
+                    <label for="streamSourceUrl">Source Livestream URL</label>
+                    <button type="button" id="validateUrlBtn" class="btn-link">Validate &amp; Probe</button>
+                  </div>
+                  <input 
+                    type="text" 
+                    id="streamSourceUrl" 
+                    placeholder="https://.../live.m3u8, rtmp://..., or YouTube URL"
+                    autocomplete="off"
+                  >
+                  <div id="validationFeedback" class="validation-feedback" style="display: none;"></div>
+                </div>
+
+                <!-- DOWNLOADED VIDEO SECTION -->
+                <div id="sourceFileSection" class="form-group" style="display: none;">
+                  <div class="field-header">
+                    <label for="sourceDownloadedSelect">Select Downloaded / Saved Video</label>
+                    <button type="button" id="refreshDownloadedBtn" class="btn-link">Refresh List</button>
+                  </div>
+                  <select id="sourceDownloadedSelect" style="width: 100%;">
+                    <option value="">-- Choose a downloaded video file --</option>
+                  </select>
+                  <div class="margin-top-10">
+                    <label class="checkbox-container" style="font-size: 0.8rem; color: #a0aec0;">
+                      <input type="checkbox" id="loopVideoCheck" checked>
+                      <span class="checkmark"></span>
+                      <span><strong>Continuous Looping (24/7 Restream):</strong> Automatically repeat video when it reaches the end</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- QUALITY PRESET SELECTION -->
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label for="qualityPresetSelect">Streaming Engine Preset</label>
+                    <select id="qualityPresetSelect">
+                      <option value="source">Direct Stream Copy (-c copy: 0% CPU, Pass-through)</option>
+                      <option value="1080p60">Transcode 1080p60 (6000 kbps x264)</option>
+                      <option value="720p60">Transcode 720p60 (4500 kbps x264)</option>
+                      <option value="720p30">Transcode 720p30 (3000 kbps x264)</option>
+                      <option value="480p30">Transcode 480p30 (1500 kbps x264)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group flex-1">
+                    <label for="kickAccountSelect">Kick Broadcast Destination</label>
+                    <select id="kickAccountSelect">
+                      <option value="manual">Manual Stream Key</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- MANUAL STREAM KEY (if not using saved Kick account) -->
+                <div id="manualKeySection" class="form-group">
+                  <label for="manualStreamKeyInput">Kick RTMP Stream Key</label>
+                  <input 
+                    type="password" 
+                    id="manualStreamKeyInput" 
+                    placeholder="sk_us-west-2_..."
+                    autocomplete="off"
+                  >
+                  <small class="help-text">Keys are encrypted with AES-256-GCM and never exposed.</small>
+                </div>
+
+                <!-- MANDATORY OWNERSHIP CONFIRMATION -->
+                <div class="ownership-box">
+                  <label class="checkbox-container">
+                    <input type="checkbox" id="ownershipConfirmCheck" required>
+                    <span class="checkmark"></span>
+                    <span class="ownership-text">
+                      <strong>Ownership Confirmation:</strong> I confirm that I own this livestream or hold explicit authorization to rebroadcast this feed to Kick.com.
+                    </span>
+                  </label>
+                </div>
+
+                <!-- BROADCAST ACTIONS -->
+                <div class="action-buttons-row">
+                  <button type="submit" id="startBroadcastBtn" class="btn btn-kick-primary">
+                    <span class="btn-icon">▶</span> START RESTREAMING
+                  </button>
+                  <button type="button" id="stopBroadcastBtn" class="btn btn-kick-danger" disabled>
+                    <span class="btn-icon">■</span> STOP RESTREAM
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- STREAMING PROCESS LOGS TERMINAL -->
+          <div class="panel terminal-panel">
+            <div class="panel-header terminal-header">
+              <div class="terminal-title">
+                <span class="term-dot"></span>
+                <h2>FFMPEG PROCESS ENGINE LOGS</h2>
+              </div>
+              <div class="terminal-actions">
+                <label class="autoscroll-toggle">
+                  <input type="checkbox" id="terminalAutoScroll" checked> Auto-scroll
+                </label>
+                <button type="button" id="clearTerminalBtn" class="btn btn-secondary-xs">Clear</button>
+              </div>
+            </div>
+            <pre id="terminalLogs" class="broadcast-terminal" tabindex="0"></pre>
+          </div>
+        </section>
+
+        <!-- ================= VIEW 2: OVERVIEW & KPIS ================= -->
+        <section id="tab-overview" class="tab-pane">
+          <div class="overview-header">
+            <h1>Platform Performance &amp; KPI Dashboard</h1>
+            <p>Overall broadcast activity and resource consumption</p>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <span class="kpi-title">TOTAL STREAMING HOURS</span>
+              <div class="kpi-number" id="kpiHours">0.0</div>
+              <span class="kpi-sub">Across all broadcasts</span>
+            </div>
+
+            <div class="kpi-card">
+              <span class="kpi-title">TOTAL BROADCASTS</span>
+              <div class="kpi-number" id="kpiBroadcasts">0</div>
+              <span class="kpi-sub">Completed sessions</span>
+            </div>
+
+            <div class="kpi-card">
+              <span class="kpi-title">BANDWIDTH CONSUMED</span>
+              <div class="kpi-number"><span id="kpiBandwidth">0.00</span> <small>GB</small></div>
+              <span class="kpi-sub">Kick RTMP egress</span>
+            </div>
+
+            <div class="kpi-card">
+              <span class="kpi-title">KICK CONNECTION</span>
+              <div class="kpi-number kpi-status" id="kpiKickStatus">Offline</div>
+              <span class="kpi-sub" id="kpiKickChannel">No channel linked</span>
+            </div>
+          </div>
+
+          <div class="panel margin-top-20">
+            <div class="panel-header">
+              <h2>RECENT BROADCAST ACTIVITY</h2>
+            </div>
+            <div class="table-container">
+              <table class="data-table" id="recentBroadcastsTable">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Source Format</th>
+                    <th>Preset</th>
+                    <th>Duration</th>
+                    <th>Bitrate</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="recentBroadcastsBody">
+                  <tr><td colspan="7" class="text-center">No broadcasts recorded yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= VIEW 3: BROADCAST HISTORY ================= -->
+        <section id="tab-history" class="tab-pane">
+          <div class="overview-header">
+            <h1>Broadcast Session History</h1>
+            <p>Historical audit logs of all URL-to-Kick restreaming operations</p>
+          </div>
+
+          <div class="panel">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Session ID</th>
+                    <th>Title</th>
+                    <th>Source URL</th>
+                    <th>Format</th>
+                    <th>Resolution</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Ended</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                  <tr><td colspan="8" class="text-center">Loading history...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= VIEW 4: SCHEDULE MANAGER ================= -->
+        <section id="tab-scheduler" class="tab-pane">
+          <div class="overview-header">
+            <h1>Automated Stream Scheduler</h1>
+            <p>Configure automated scheduled broadcasts with start and stop timers</p>
+          </div>
+
+          <div class="scheduler-grid">
+            <!-- SCHEDULE FORM -->
+            <div class="panel">
+              <div class="panel-header">
+                <h2>SCHEDULE NEW RESTREAM</h2>
+              </div>
+              <form id="schedulerForm" class="scheduler-form">
+                <div class="form-group">
+                  <label for="schedTitle">Broadcast Title</label>
+                  <input type="text" id="schedTitle" placeholder="e.g. Esports Tournament Rebroadcast" required>
+                </div>
+                <div class="form-group">
+                  <label for="schedSourceUrl">Livestream Source URL</label>
+                  <input type="text" id="schedSourceUrl" placeholder="https://.../live.m3u8" required>
+                </div>
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label for="schedStartTime">Scheduled Start Time</label>
+                    <input type="datetime-local" id="schedStartTime" required>
+                  </div>
+                  <div class="form-group flex-1">
+                    <label for="schedStopTime">Scheduled Stop Time (Optional)</label>
+                    <input type="datetime-local" id="schedStopTime">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label for="schedQualityPreset">Encoding Preset</label>
+                    <select id="schedQualityPreset">
+                      <option value="source">Direct Stream Copy</option>
+                      <option value="1080p60">1080p60 (Transcode)</option>
+                      <option value="720p60">720p60 (Transcode)</option>
+                    </select>
+                  </div>
+                  <div class="form-group flex-1">
+                    <label for="schedAutoStart">Startup Action</label>
+                    <select id="schedAutoStart">
+                      <option value="true">Auto-start when time is reached</option>
+                      <option value="false">Manual trigger only</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-kick-primary">Create Scheduled Event</button>
+              </form>
+            </div>
+
+            <!-- SCHEDULED LIST -->
+            <div class="panel">
+              <div class="panel-header">
+                <h2>PENDING SCHEDULED SESSIONS</h2>
+              </div>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Start Time</th>
+                      <th>Preset</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="scheduledTableBody">
+                    <tr><td colspan="5" class="text-center">No scheduled events.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= VIEW 5: VIDEO DOWNLOADER ================= -->
+        <section id="tab-downloads" class="tab-pane">
+          <div class="overview-header">
+            <h1>Video Downloader from URL</h1>
+            <p>Capture and download video directly from any livestream URL or online media link to MP4</p>
+          </div>
+
+          <div class="panel margin-bottom-20">
+            <div class="panel-header">
+              <h2>DOWNLOAD VIDEO FROM URL</h2>
+              <span class="panel-subtitle">Supports HLS (.m3u8), direct MP4, RTMP, and YouTube URLs</span>
+            </div>
+            <form id="urlDownloaderForm" class="download-form">
+              <div class="form-row">
+                <div class="form-group flex-2">
+                  <label for="dlVideoUrl">Livestream / Video URL</label>
+                  <input type="text" id="dlVideoUrl" placeholder="https://.../live.m3u8, direct video, or YouTube link" required autocomplete="off">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="dlVideoTitle">Custom File Title (Optional)</label>
+                  <input type="text" id="dlVideoTitle" placeholder="e.g. highlight_clip" autocomplete="off">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="dlVideoDuration">Duration Limit</label>
+                  <select id="dlVideoDuration">
+                    <option value="0">Full / Unlimited (until stopped)</option>
+                    <option value="60">60 Seconds</option>
+                    <option value="300">5 Minutes</option>
+                    <option value="900">15 Minutes</option>
+                    <option value="1800">30 Minutes</option>
+                    <option value="3600">1 Hour</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" id="startDlBtn" class="btn btn-kick-primary">
+                <span class="btn-icon">⬇</span> Start Video Download
+              </button>
+            </form>
+
+            <div id="dlActiveBox" class="active-downloads-box" style="display: none; margin-top: 16px;">
+              <h3>ACTIVE VIDEO CAPTURES</h3>
+              <div id="dlActiveList"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>DOWNLOADED VIDEO FILES</h2>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>File Name</th>
+                    <th>File Size</th>
+                    <th>Downloaded Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="dlFilesTableBody">
+                  <tr><td colspan="4" class="text-center">No downloaded files yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= VIEW 6: SHORTS & CLIPPER (OPENSHORTS ENGINE) ================= -->
+        <section id="tab-clipper" class="tab-pane">
+          <div class="overview-header">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <h1>Shorts &amp; Video Clipper</h1>
+                <p>OpenShorts-powered vertical video reframing, intelligent blurring, and highlight clipping</p>
+              </div>
+              <div class="dest-badge" style="background: rgba(83, 252, 24, 0.15); color: #53fc18; border: 1px solid rgba(83, 252, 24, 0.4); padding: 6px 14px; font-weight: 700; border-radius: 4px; font-size: 11px;">
+                OPENSHORTS 9:16 VERTICAL ENGINE
+              </div>
+            </div>
+          </div>
+
+          <div class="workbench-grid margin-bottom-20">
+            <!-- CLIPPER CONTROLS & UPLOAD -->
+            <div class="panel">
+              <div class="panel-header">
+                <h2>1. SELECT &amp; CONFIGURE CLIP</h2>
+              </div>
+
+              <!-- Video Source Selector -->
+              <div class="form-group margin-bottom-16">
+                <label>Video Source</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                  <button type="button" id="clipSourceUploadBtn" class="btn btn-secondary-sm active-toggle" style="flex: 1;">Upload File</button>
+                  <button type="button" id="clipSourceDownloadedBtn" class="btn btn-secondary-sm" style="flex: 1;">Use Downloaded Video</button>
+                </div>
+
+                <div id="clipUploadSection">
+                  <div class="dropzone" id="clipDropzone">
+                    <input type="file" id="clipFileInput" accept="video/mp4,video/webm,video/mkv,video/mov" style="display: none;">
+                    <div class="dropzone-content" id="dropzonePrompt">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 36px; height: 36px; stroke: #53fc18; margin-bottom: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      <p><strong>Click to browse</strong> or drag &amp; drop video here</p>
+                      <small class="text-muted">Supports MP4, MOV, WebM, MKV up to 2GB</small>
+                    </div>
+                    <div id="uploadProgressBox" style="display: none; padding: 10px; text-align: center;">
+                      <span id="uploadStatusText">Uploading video...</span>
+                      <div class="tel-bar-container margin-top-10"><div id="uploadProgressBar" class="tel-bar" style="width: 0%; background: #53fc18;"></div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="clipDownloadedSection" style="display: none;">
+                  <select id="clipDownloadedSelect" style="width: 100%;">
+                    <option value="">-- Choose a downloaded stream video --</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="selectedVideoMetaBox" class="security-info-box margin-bottom-16" style="display: none;">
+                <span id="selectedVideoName" style="font-weight: 700; color: #53fc18;"></span>
+                <div style="display: flex; gap: 16px; margin-top: 4px; font-size: 12px; color: #888;">
+                  <span>Duration: <strong id="selectedVideoDuration" style="color: #eee;">-</strong></span>
+                  <span>Resolution: <strong id="selectedVideoRes" style="color: #eee;">-</strong></span>
+                </div>
+              </div>
+
+              <!-- Trimming & Layout Options -->
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label for="clipStartTime">Start Time (sec or HH:MM:SS)</label>
+                  <input type="text" id="clipStartTime" placeholder="00:00:00 or 10" value="0">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="clipEndTime">End Time (sec or HH:MM:SS)</label>
+                  <input type="text" id="clipEndTime" placeholder="00:00:30 or 40" value="30">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label for="clipLayout">Layout Framing (OpenShorts)</label>
+                  <select id="clipLayout">
+                    <option value="vertical_blur" selected>📱 9:16 Vertical with Blurred Background (Recommended)</option>
+                    <option value="vertical_crop">✂️ 9:16 Vertical Center Crop (Full Screen)</option>
+                    <option value="square">⏹️ 1:1 Square (Instagram / Twitter)</option>
+                    <option value="landscape">📺 16:9 Landscape Re-frame</option>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label for="clipTitle">Clip Title</label>
+                  <input type="text" id="clipTitle" placeholder="e.g. insane_kick_clutch">
+                </div>
+              </div>
+
+              <!-- MODERN FONT CAPTIONS & HOOK OVERLAY -->
+              <div class="panel-header margin-top-16" style="margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px dashed rgba(83, 252, 24, 0.3);">
+                <h2 style="font-size: 0.82rem; color: #53fc18; letter-spacing: 1px;">MODERN TYPOGRAPHY CAPTIONS &amp; HOOK OVERLAY</h2>
+              </div>
+
+              <div class="form-group margin-bottom-12">
+                <label for="clipCaptionText">Hook Headline / Caption Text (Optional)</label>
+                <input type="text" id="clipCaptionText" placeholder="e.g. WAIT TILL THE END! 🔥 or INSANE 1v4 CLUTCH">
+                <small class="help-text">Renders bold modern typography directly onto your vertical short.</small>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label for="clipCaptionFont">Modern Typography</label>
+                  <select id="clipCaptionFont">
+                    <option value="segoe" selected>Segoe UI Bold (Clean Sans / TikTok)</option>
+                    <option value="impact">Impact (Viral Meme / Bold Headline)</option>
+                    <option value="arial_bold">Arial Bold (High Contrast)</option>
+                    <option value="trebuchet">Trebuchet MS Bold (Dynamic Streamer)</option>
+                  </select>
+                </div>
+
+                <div class="form-group flex-1">
+                  <label for="clipCaptionStyle">Color &amp; Effect</label>
+                  <select id="clipCaptionStyle">
+                    <option value="kick_green" selected>🟢 Kick Green Glow (Black Stroke)</option>
+                    <option value="tiktok_white">⚪ TikTok Crisp White (Heavy Black Stroke)</option>
+                    <option value="shorts_yellow">🟡 Shorts Vibrant Yellow (Heavy Stroke)</option>
+                    <option value="fire_red">🔴 Urgent Fire Red (Heavy Stroke)</option>
+                    <option value="dark_box">📦 Modern Translucent Dark Badge</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label for="clipCaptionPosition">Position</label>
+                  <select id="clipCaptionPosition">
+                    <option value="top_hook" selected>Top Hook Banner (Above Video)</option>
+                    <option value="bottom">Bottom Caption (Subtitles)</option>
+                    <option value="center">Center Punchline</option>
+                  </select>
+                </div>
+
+                <div class="form-group flex-1">
+                  <label for="clipCaptionSize">Font Size</label>
+                  <select id="clipCaptionSize">
+                    <option value="large">Large (64px - Loud Headline)</option>
+                    <option value="medium" selected>Medium (52px - Recommended)</option>
+                    <option value="small">Small (38px - Subtitle)</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="button" id="createClipBtn" class="btn btn-kick-primary margin-top-10" style="width: 100%;" disabled>
+                <span class="btn-icon">✂️</span> Generate Clip
+              </button>
+              <div id="clipGenSpinner" style="display: none; text-align: center; margin-top: 10px; color: #53fc18; font-size: 13px;">
+                Processing video with FFmpeg OpenShorts filter... Please wait.
+              </div>
+            </div>
+
+            <!-- SOURCE VIDEO SCRUBBER PREVIEW -->
+            <div class="panel">
+              <div class="panel-header">
+                <h2>SOURCE VIDEO MONITOR</h2>
+                <span class="tag-badge" id="scrubberTimeBadge">00:00 / 00:00</span>
+              </div>
+              <div class="monitor-viewport" style="min-height: 240px; display: flex; align-items: center; justify-content: center; background: #000;">
+                <video id="clipSourcePlayer" controls playsinline style="max-height: 280px; width: 100%; object-fit: contain;"></video>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <button type="button" id="setStartFromCurrentBtn" class="btn btn-secondary-sm" title="Set start time to current player timestamp">Set Start to Current</button>
+                <button type="button" id="setEndFromCurrentBtn" class="btn btn-secondary-sm" title="Set end time to current player timestamp">Set End to Current</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CLIPS GALLERY -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2>GENERATED SHORTS &amp; CLIPS</h2>
+              <button type="button" id="refreshClipsBtn" class="btn btn-secondary-sm">Refresh Clips</button>
+            </div>
+            <div id="clipsGalleryGrid" class="clips-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 14px;">
+              <p class="text-muted" style="grid-column: 1 / -1; text-align: center; padding: 24px;">No clips generated yet. Upload or pick a video above and generate a 9:16 short.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= VIEW 7: KICK SETTINGS ================= -->
+        <section id="tab-settings" class="tab-pane">
+          <div class="overview-header">
+            <h1>Kick Channel &amp; Security Settings</h1>
+            <p>Manage encrypted Kick credentials and RTMP ingest endpoints</p>
+          </div>
+
+          <div class="settings-grid">
+            <div class="panel">
+              <div class="panel-header">
+                <h2>LINK KICK.COM CHANNEL</h2>
+              </div>
+              <form id="kickAccountForm" class="settings-form">
+                <div class="form-group">
+                  <label for="kickUsernameInput">Kick Channel Username</label>
+                  <input type="text" id="kickUsernameInput" placeholder="e.g. your_kick_channel" required>
+                </div>
+                <div class="form-group">
+                  <label for="kickStreamKeyInput">Kick RTMP Stream Key</label>
+                  <input type="password" id="kickStreamKeyInput" placeholder="sk_us-west-2_..." required>
+                  <small class="help-text">Found in your Kick Creator Dashboard > Settings > Stream Key.</small>
+                </div>
+                <div class="form-group">
+                  <label for="kickRtmpUrlInput">Kick Ingest RTMP URL</label>
+                  <input type="text" id="kickRtmpUrlInput" value="rtmps://fa723fc1b171.global-contribute.live-video.net/app/">
+                </div>
+                <button type="submit" class="btn btn-kick-primary">Save &amp; Encrypt Credentials</button>
+              </form>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h2>CONNECTED KICK ACCOUNTS</h2>
+              </div>
+              <div id="connectedAccountsList" class="accounts-list">
+                <p class="text-muted">No Kick accounts saved yet.</p>
+              </div>
+
+              <div class="security-info-box margin-top-20">
+                <h3>Encryption &amp; Security Specs</h3>
+                <ul>
+                  <li>Stream keys are encrypted with <strong>AES-256-GCM</strong>.</li>
+                  <li>Keys are decrypted in-memory only during FFmpeg execution.</li>
+                  <li>No stream keys are ever printed in browser responses or server logs.</li>
+                  <li>SSRF protection blocks all RFC 1918 private IPs and AWS/GCP metadata ranges.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
