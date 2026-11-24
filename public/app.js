@@ -888,6 +888,8 @@
       e.preventDefault();
       const sourceUrl = document.getElementById('dlVideoUrl').value.trim();
       const title = document.getElementById('dlVideoTitle').value.trim();
+      const resolutionEl = document.getElementById('dlVideoResolution');
+      const resolution = resolutionEl ? resolutionEl.value : 'source';
       const durationSeconds = document.getElementById('dlVideoDuration').value;
 
       if (!sourceUrl) {
@@ -899,7 +901,7 @@
         const res = await fetch('/api/download/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sourceUrl, title, durationSeconds })
+          body: JSON.stringify({ sourceUrl, title, durationSeconds, resolution })
         });
         const data = await res.json();
         if (!res.ok || !data.success) {
@@ -949,7 +951,7 @@
         card.innerHTML = `
           <div>
             <div class="dl-filename"><strong>${escapeHtml(item.fileName)}</strong></div>
-            <div class="dl-stats">Downloaded: <strong>${escapeHtml(mb)} MB</strong> • Duration: ${escapeHtml(item.durationSeconds)}s • Speed: ${escapeHtml(item.speed)}</div>
+            <div class="dl-stats">Downloaded: <strong>${escapeHtml(mb)} MB</strong> • Duration: ${escapeHtml(item.durationSeconds)}s • Speed: ${escapeHtml(item.speed)} • Resolution: <span class="tag-badge" style="font-size:0.75rem;">${escapeHtml(item.resolution || 'Source')}</span></div>
           </div>
           <button type="button" class="btn btn-danger-sm stop-capture-btn" data-id="${escapeHtml(item.id)}">Stop Capture</button>
         `;
@@ -983,6 +985,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td><code>${escapeHtml(f.fileName)}</code></td>
+            <td><span class="tag-badge" style="background: #23272e; color: #53FC18; border: 1px solid rgba(83, 252, 24, 0.25);">${escapeHtml(f.resolution || 'Source')}</span></td>
             <td>${escapeHtml(mb)} MB</td>
             <td>${escapeHtml(new Date(f.createdAt).toLocaleString())}</td>
             <td>
@@ -1011,7 +1014,7 @@
           });
         });
       } else {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No downloaded files yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No downloaded files yet.</td></tr>';
       }
     } catch (_) {}
   }

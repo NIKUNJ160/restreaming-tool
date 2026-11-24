@@ -12,6 +12,68 @@ if (!fs.existsSync(DOWNLOADS_DIR)) {
 class DownloadManager {
   constructor() {
     this.activeDownloads = new Map();
+    this.resolutionStoreFile = path.resolve(__dirname, '..', '..', 'data', 'downloads_store.json');
+    this.resolutionCache = new Map();
+    this.loadStore();
+    this.syncInitialResolutions();
+  }
+
+  loadStore() {
+    try {
+      if (fs.existsSync(this.resolutionStoreFile)) {
+        const raw = fs.readFileSync(this.resolutionStoreFile, 'utf8');
+        const data = JSON.parse(raw);
+        if (data && typeof data === 'object') {
+          for (const [k, v] of Object.entries(data)) {
+            this.resolutionCache.set(k, v);
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  saveStore() {
+    try {
+      const obj = {};
+      for (const [k, v] of this.resolutionCache.entries()) {
+        obj[k] = v;
+      }
+      fs.writeFileSync(this.resolutionStoreFile, JSON.stringify(obj, null, 2), 'utf8');
+    } catch (_) {}
+  }
+
+  syncInitialResolutions() {
+    try {
+      const files = fs.readdirSync(DOWNLOADS_DIR).filter(f => f.endsWith('.mp4'));
+      for (const file of files) {
+        if (!this.resolutionCache.has(file)) {
+          this.probeFileResolution(file).catch(() => {});
+        }
+      }
+    } catch (_) {}
+  }
+
+  probeFileResolution(fileName) {
+    if (this.resolutionCache.has(fileName)) {
+      return Promise.resolve(this.resolutionCache.get(fileName));
+    }
+    const filePath = path.join(DOWNLOADS_DIR, fileName);
+    if (!fs.existsSync(filePath)) return Promise.resolve('Source');
+
+    const ffmpegPath = this.resolveBinary();
+    return new Promise(resolve => {
+      const proc = spawn(ffmpegPath, ['-hide_banner', '-i', filePath], { windowsHide: true });
+      let stderr = '';
+      proc.stderr.on('data', d => stderr += d);
+      proc.on('close', () => {
+        const match = stderr.match(/Video:.*?(\d{3,4}x\d{3,4})/);
+        const res = match ? match[1] : 'Source';
+        this.resolutionCache.set(fileName, res);
+        this.saveStore();
+        resolve(res);
+      });
+      proc.on('error', () => resolve('Source'));
+    });
   }
 
   resolveBinary() {
@@ -30,6 +92,7 @@ class DownloadManager {
         id,
         title: task.title,
         fileName: task.fileName,
+        resolution: task.resolution || 'Source',
         downloadedBytes: task.downloadedBytes,
         durationSeconds: task.durationSeconds,
         speed: task.speed,
@@ -45,8 +108,10 @@ class DownloadManager {
       return files.map(fileName => {
         const filePath = path.join(DOWNLOADS_DIR, fileName);
         const stats = fs.statSync(filePath);
+        const resolution = this.resolutionCache.get(fileName) || 'Source';
         return {
           fileName,
+          resolution,
           fileSizeBytes: stats.size,
           createdAt: stats.mtime.toISOString(),
           downloadUrl: `/api/download/file/${encodeURIComponent(fileName)}`
@@ -57,15 +122,16 @@ class DownloadManager {
     }
   }
 
-  async startDownload({ sourceUrl, title, durationSeconds }) {
+  async startDownload({ sourceUrl, title, durationSeconds, resolution = 'source' }) {
     if (!sourceUrl || typeof sourceUrl !== 'string' || !sourceUrl.trim()) {
       throw new Error('Valid video URL is required.');
     }
 
     const cleanSource = sourceUrl.trim();
     const cleanTitle = (title || 'video').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const cleanRes = (resolution || 'source').toLowerCase();
     const taskId = 'dl_' + Date.now().toString(36);
-    const fileName = `${cleanTitle}_${taskId}.mp4`;
+    const fileName = `${cleanTitle}_${cleanRes !== 'source' ? cleanRes + '_' : ''}${taskId}.mp4`;
     const filePath = path.join(DOWNLOADS_DIR, fileName);
 
     let resolvedUrls = [cleanSource];
@@ -83,12 +149,27 @@ class DownloadManager {
     const whitelist = getFfmpegProtocolWhitelist(isLocal);
     args.push('-protocol_whitelist', whitelist);
 
+    // Input(s)
     if (resolvedUrls.length > 1) {
       args.push('-i', resolvedUrls[0]);
       args.push('-i', resolvedUrls[1]);
-      args.push('-c:v', 'copy', '-c:a', 'aac');
     } else {
       args.push('-i', resolvedUrls[0]);
+    }
+
+    // Resolution & Video Encoding Strategy
+    const scaleMap = {
+      '1080p': 'scale=-2:1080',
+      '720p': 'scale=-2:720',
+      '480p': 'scale=-2:480',
+      '360p': 'scale=-2:360'
+    };
+
+    if (scaleMap[cleanRes]) {
+      args.push('-vf', scaleMap[cleanRes], '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '22', '-c:a', 'aac', '-b:a', '128k');
+    } else if (resolvedUrls.length > 1) {
+      args.push('-c:v', 'copy', '-c:a', 'aac');
+    } else {
       args.push('-c', 'copy');
     }
 
@@ -104,11 +185,14 @@ class DownloadManager {
       windowsHide: true
     });
 
+    const displayResolution = cleanRes === 'source' ? 'Source' : cleanRes.toUpperCase();
+
     const task = {
       id: taskId,
       title: cleanTitle,
       fileName,
       filePath,
+      resolution: displayResolution,
       process: proc,
       status: 'DOWNLOADING',
       downloadedBytes: 0,
@@ -139,6 +223,9 @@ class DownloadManager {
 
     proc.on('close', () => {
       this.activeDownloads.delete(taskId);
+      if (fs.existsSync(filePath)) {
+        this.probeFileResolution(fileName).catch(() => {});
+      }
     });
 
     proc.on('error', () => {
@@ -149,7 +236,8 @@ class DownloadManager {
       success: true,
       id: taskId,
       fileName,
-      message: 'Video download started.'
+      resolution: displayResolution,
+      message: `Video download started at ${displayResolution} resolution.`
     };
   }
 
@@ -188,7 +276,12 @@ class DownloadManager {
     const dirWithSep = DOWNLOADS_DIR.endsWith(path.sep) ? DOWNLOADS_DIR : DOWNLOADS_DIR + path.sep;
     if (!target.startsWith(dirWithSep)) return false;
     if (fs.existsSync(target) && fs.statSync(target).isFile()) {
-      try { fs.unlinkSync(target); return true; } catch (_) {}
+      try {
+        fs.unlinkSync(target);
+        this.resolutionCache.delete(safeName);
+        this.saveStore();
+        return true;
+      } catch (_) {}
     }
     return false;
   }

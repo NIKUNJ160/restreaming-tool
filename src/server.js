@@ -296,10 +296,15 @@ app.delete('/api/schedule/:id', (req, res) => {
 
 // ---------------- VIDEO DOWNLOAD FROM URL ----------------
 app.post('/api/download/start', rateLimit({ windowMs: 60000, max: 15 }), async (req, res) => {
-  const { sourceUrl, title, durationSeconds } = req.body;
+  const { sourceUrl, title, durationSeconds, resolution } = req.body;
   if (!sourceUrl) {
     return res.status(400).json({ success: false, error: 'Source video URL is required.' });
   }
+
+  const allowedResolutions = new Set(['source', 'original', '1080p', '720p', '480p', '360p']);
+  const safeResolution = allowedResolutions.has(String(resolution || '').toLowerCase())
+    ? String(resolution).toLowerCase()
+    : 'source';
 
   const safety = await validateStreamUrl(sourceUrl);
   if (!safety.valid) {
@@ -310,7 +315,8 @@ app.post('/api/download/start', rateLimit({ windowMs: 60000, max: 15 }), async (
     const result = await downloadManager.startDownload({
       sourceUrl: safety.sanitizedUrl,
       title,
-      durationSeconds
+      durationSeconds,
+      resolution: safeResolution
     });
     return res.json(result);
   } catch (err) {
