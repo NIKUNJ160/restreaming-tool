@@ -2,6 +2,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { timeToSeconds } = require('./timeUtils');
 
 const UPLOADS_DIR = path.resolve(__dirname, '..', '..', 'uploads');
 const CLIPS_DIR = path.resolve(__dirname, '..', '..', 'clips');
@@ -143,8 +144,8 @@ class ClipManager {
       throw new Error('Source video file does not exist.');
     }
 
-    const startSec = this.timeToSeconds(startTime || 0);
-    const endSec = this.timeToSeconds(endTime || 0);
+    const startSec = timeToSeconds(startTime || 0);
+    const endSec = timeToSeconds(endTime || 0);
     const clipDuration = endSec > startSec ? (endSec - startSec) : null;
 
     const clipId = 'clip_' + crypto.randomUUID().slice(0, 8);
@@ -289,16 +290,7 @@ class ClipManager {
   }
 
   timeToSeconds(timeStr) {
-    if (typeof timeStr === 'number') return timeStr;
-    if (!timeStr) return 0;
-    if (!timeStr.includes(':')) return parseFloat(timeStr) || 0;
-    const parts = timeStr.split(':').map(Number);
-    if (parts.length === 3) {
-      return parts[0] * 3600 + parts[1] * 60 + parts[2];
-    } else if (parts.length === 2) {
-      return parts[0] * 60 + parts[1];
-    }
-    return parseFloat(timeStr) || 0;
+    return timeToSeconds(timeStr);
   }
 
   deleteClip(id) {

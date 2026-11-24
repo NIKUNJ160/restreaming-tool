@@ -477,10 +477,20 @@
                     <option value="360p">360p Low (640x360)</option>
                   </select>
                 </div>
+              </div>
+              <div class="form-row">
                 <div class="form-group flex-1">
-                  <label for="dlVideoDuration">Duration Limit</label>
+                  <label for="dlVideoStartTime">Start Timestamp (From)</label>
+                  <input type="text" id="dlVideoStartTime" placeholder="e.g. 00:01:30 or 90s (optional)" autocomplete="off">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="dlVideoEndTime">End Timestamp (To)</label>
+                  <input type="text" id="dlVideoEndTime" placeholder="e.g. 00:05:00 or 300s (optional)" autocomplete="off">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="dlVideoDuration">Duration Limit (Fallback)</label>
                   <select id="dlVideoDuration">
-                    <option value="0">Full / Unlimited (until stopped)</option>
+                    <option value="0">Full / Until End (or End Time)</option>
                     <option value="60">60 Seconds</option>
                     <option value="300">5 Minutes</option>
                     <option value="900">15 Minutes</option>

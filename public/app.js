@@ -890,6 +890,10 @@
       const title = document.getElementById('dlVideoTitle').value.trim();
       const resolutionEl = document.getElementById('dlVideoResolution');
       const resolution = resolutionEl ? resolutionEl.value : 'source';
+      const startTimeEl = document.getElementById('dlVideoStartTime');
+      const startTime = startTimeEl ? startTimeEl.value.trim() : '';
+      const endTimeEl = document.getElementById('dlVideoEndTime');
+      const endTime = endTimeEl ? endTimeEl.value.trim() : '';
       const durationSeconds = document.getElementById('dlVideoDuration').value;
 
       if (!sourceUrl) {
@@ -901,7 +905,7 @@
         const res = await fetch('/api/download/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sourceUrl, title, durationSeconds, resolution })
+          body: JSON.stringify({ sourceUrl, title, durationSeconds, resolution, startTime, endTime })
         });
         const data = await res.json();
         if (!res.ok || !data.success) {
@@ -951,7 +955,7 @@
         card.innerHTML = `
           <div>
             <div class="dl-filename"><strong>${escapeHtml(item.fileName)}</strong></div>
-            <div class="dl-stats">Downloaded: <strong>${escapeHtml(mb)} MB</strong> • Duration: ${escapeHtml(item.durationSeconds)}s • Speed: ${escapeHtml(item.speed)} • Resolution: <span class="tag-badge" style="font-size:0.75rem;">${escapeHtml(item.resolution || 'Source')}</span></div>
+            <div class="dl-stats">Downloaded: <strong>${escapeHtml(mb)} MB</strong> • Duration: ${escapeHtml(item.durationSeconds)}s • Speed: ${escapeHtml(item.speed)} • Clip: <span class="tag-badge" style="font-size:0.75rem;">${escapeHtml(item.timeRange || 'Full')}</span> • Resolution: <span class="tag-badge" style="font-size:0.75rem;">${escapeHtml(item.resolution || 'Source')}</span></div>
           </div>
           <button type="button" class="btn btn-danger-sm stop-capture-btn" data-id="${escapeHtml(item.id)}">Stop Capture</button>
         `;

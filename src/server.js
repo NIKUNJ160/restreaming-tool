@@ -296,7 +296,7 @@ app.delete('/api/schedule/:id', (req, res) => {
 
 // ---------------- VIDEO DOWNLOAD FROM URL ----------------
 app.post('/api/download/start', rateLimit({ windowMs: 60000, max: 15 }), async (req, res) => {
-  const { sourceUrl, title, durationSeconds, resolution } = req.body;
+  const { sourceUrl, title, durationSeconds, resolution, startTime, endTime } = req.body;
   if (!sourceUrl) {
     return res.status(400).json({ success: false, error: 'Source video URL is required.' });
   }
@@ -316,7 +316,9 @@ app.post('/api/download/start', rateLimit({ windowMs: 60000, max: 15 }), async (
       sourceUrl: safety.sanitizedUrl,
       title,
       durationSeconds,
-      resolution: safeResolution
+      resolution: safeResolution,
+      startTime: typeof startTime === 'string' || typeof startTime === 'number' ? startTime : undefined,
+      endTime: typeof endTime === 'string' || typeof endTime === 'number' ? endTime : undefined
     });
     return res.json(result);
   } catch (err) {

@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const probeService = require('./probeService');
 const { getFfmpegProtocolWhitelist } = require('../security/ssrfValidator');
+const { timeToSeconds, formatSecondsToTime } = require('./timeUtils');
 
 const DOWNLOADS_DIR = path.resolve(__dirname, '..', '..', 'downloads');
 if (!fs.existsSync(DOWNLOADS_DIR)) {
@@ -93,6 +94,7 @@ class DownloadManager {
         title: task.title,
         fileName: task.fileName,
         resolution: task.resolution || 'Source',
+        timeRange: task.timeRange || 'Full Stream',
         downloadedBytes: task.downloadedBytes,
         durationSeconds: task.durationSeconds,
         speed: task.speed,
@@ -122,7 +124,7 @@ class DownloadManager {
     }
   }
 
-  async startDownload({ sourceUrl, title, durationSeconds, resolution = 'source' }) {
+  async startDownload({ sourceUrl, title, durationSeconds, resolution = 'source', startTime, endTime }) {
     if (!sourceUrl || typeof sourceUrl !== 'string' || !sourceUrl.trim()) {
       throw new Error('Valid video URL is required.');
     }
@@ -130,8 +132,35 @@ class DownloadManager {
     const cleanSource = sourceUrl.trim();
     const cleanTitle = (title || 'video').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
     const cleanRes = (resolution || 'source').toLowerCase();
+
+    // Timestamp & range processing
+    const startSec = timeToSeconds(startTime);
+    const endSec = timeToSeconds(endTime);
+
+    let clipDuration = null;
+    if (endSec > startSec) {
+      clipDuration = endSec - startSec;
+    } else {
+      const dur = parseInt(durationSeconds, 10);
+      if (dur > 0) {
+        clipDuration = dur;
+      }
+    }
+
+    let timeRangeDisplay = 'Full Stream';
+    let timeLabel = '';
+    if (startSec > 0 && endSec > startSec) {
+      timeRangeDisplay = `${formatSecondsToTime(startSec)} → ${formatSecondsToTime(endSec)} (${Math.round(clipDuration)}s)`;
+      timeLabel = `clip_${Math.round(startSec)}s_${Math.round(endSec)}s_`;
+    } else if (startSec > 0) {
+      timeRangeDisplay = `From ${formatSecondsToTime(startSec)}${clipDuration ? ` (${Math.round(clipDuration)}s)` : ''}`;
+      timeLabel = `from_${Math.round(startSec)}s_`;
+    } else if (clipDuration > 0) {
+      timeRangeDisplay = `First ${Math.round(clipDuration)}s`;
+    }
+
     const taskId = 'dl_' + Date.now().toString(36);
-    const fileName = `${cleanTitle}_${cleanRes !== 'source' ? cleanRes + '_' : ''}${taskId}.mp4`;
+    const fileName = `${cleanTitle}_${timeLabel}${cleanRes !== 'source' ? cleanRes + '_' : ''}${taskId}.mp4`;
     const filePath = path.join(DOWNLOADS_DIR, fileName);
 
     let resolvedUrls = [cleanSource];
@@ -149,9 +178,17 @@ class DownloadManager {
     const whitelist = getFfmpegProtocolWhitelist(isLocal);
     args.push('-protocol_whitelist', whitelist);
 
+    // Fast input seek if start timestamp is provided
+    if (startSec > 0) {
+      args.push('-ss', String(startSec));
+    }
+
     // Input(s)
     if (resolvedUrls.length > 1) {
       args.push('-i', resolvedUrls[0]);
+      if (startSec > 0) {
+        args.push('-ss', String(startSec));
+      }
       args.push('-i', resolvedUrls[1]);
     } else {
       args.push('-i', resolvedUrls[0]);
@@ -173,9 +210,9 @@ class DownloadManager {
       args.push('-c', 'copy');
     }
 
-    const dur = parseInt(durationSeconds, 10);
-    if (dur > 0) {
-      args.push('-t', String(dur));
+    // Clip duration limit
+    if (clipDuration && clipDuration > 0) {
+      args.push('-t', String(clipDuration));
     }
 
     args.push('-movflags', '+faststart', '-y', filePath);
@@ -193,6 +230,7 @@ class DownloadManager {
       fileName,
       filePath,
       resolution: displayResolution,
+      timeRange: timeRangeDisplay,
       process: proc,
       status: 'DOWNLOADING',
       downloadedBytes: 0,
@@ -237,7 +275,8 @@ class DownloadManager {
       id: taskId,
       fileName,
       resolution: displayResolution,
-      message: `Video download started at ${displayResolution} resolution.`
+      timeRange: timeRangeDisplay,
+      message: `Video download started (${timeRangeDisplay}, ${displayResolution}).`
     };
   }
 
