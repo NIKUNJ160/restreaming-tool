@@ -12,10 +12,11 @@ class QueueService extends EventEmitter {
   }
 
   async initBullMQ() {
+    let redis = null;
     try {
       const { Queue } = require('bullmq');
       const IORedis = require('ioredis');
-      const redis = new IORedis({
+      redis = new IORedis({
         host: process.env.REDIS_HOST || '127.0.0.1',
         port: parseInt(process.env.REDIS_PORT, 10) || 6379,
         maxRetriesPerRequest: null,
@@ -23,6 +24,9 @@ class QueueService extends EventEmitter {
         lazyConnect: true,
         retryStrategy: () => null
       });
+
+      // Prevent unhandled error event crash on connection loss
+      redis.on('error', () => {});
 
       await redis.connect();
       const info = await redis.info();
@@ -35,9 +39,13 @@ class QueueService extends EventEmitter {
         console.log(`[REDIS] Redis v${verMatch[1]} verified. BullMQ distributed queue active.`);
       } else {
         this.redisAvailable = false;
+        try { redis.disconnect(); } catch (_) {}
         console.log(`[QUEUE] Local Redis is v${verMatch ? verMatch[1] : 'unknown'} (< 5.0). Using isolated in-memory worker engine.`);
       }
     } catch (err) {
+      if (redis) {
+        try { redis.disconnect(); } catch (_) {}
+      }
       this.redisAvailable = false;
       console.log(`[QUEUE] Running isolated streaming workers engine.`);
     }

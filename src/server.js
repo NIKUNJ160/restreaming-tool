@@ -3,6 +3,15 @@ const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+
+// Robust process crash guards
+process.on('uncaughtException', err => {
+  console.error('[FATAL SERVER ERROR] Uncaught exception:', err.stack || err.message || err);
+});
+process.on('unhandledRejection', reason => {
+  console.error('[FATAL SERVER ERROR] Unhandled rejection:', reason);
+});
+
 const config = require('./config');
 const db = require('./db/database');
 const kickService = require('./kick/kickService');
